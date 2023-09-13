@@ -8,9 +8,14 @@ import (
 )
 
 func SetupRouter(e *echo.Echo) {
+
 	auth := handlers.NewAuth(database.InitDB())
 
 	e.POST("/register", auth.Register)
 	e.POST("/login", auth.Login)
+
+	e.GET("/books", auth.GetAllBooks)
+	e.POST("/rent", auth.RentBook)
+	e.PUT("/update", auth.UpdateBook)
 
 }

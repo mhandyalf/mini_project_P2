@@ -29,16 +29,3 @@ type RentalHistory struct {
 	ReturnDate time.Time `json:"return_date,omitempty"`
 	RentalCost float64   `json:"rental_cost"`
 }
-
-type PaymentRequest struct {
-	Product     []string  `json:"product"`
-	Qty         []int     `json:"qty"`
-	Price       []float64 `json:"price"`
-	ReturnURL   string    `json:"returnUrl"`
-	CancelURL   string    `json:"cancelUrl"`
-	NotifyURL   string    `json:"notifyUrl"`
-	ReferenceID string    `json:"referenceId"`
-	BuyerName   string    `json:"buyerName"`
-	BuyerEmail  string    `json:"buyerEmail"`
-	BuyerPhone  string    `json:"buyerPhone"`
-}
