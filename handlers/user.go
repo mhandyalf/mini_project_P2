@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"mini_project_p2/models"
+	"os"
 	"time"
 
 	"github.com/golang-jwt/jwt"
@@ -39,14 +40,14 @@ func (h *Auth) Register(c echo.Context) error {
 	}
 
 	// Mengirim email konfirmasi
-	from := mail.NewEmail("Nama Pengirim", "mhandyalfurqon@gmail.com")
+	from := mail.NewEmail("Handy Library", "mhandyalfurqon@gmail.com")
 	subject := "Konfirmasi Pendaftaran"
-	to := mail.NewEmail("Nama Penerima", user.Email) // user.Email adalah alamat email penerima
+	to := mail.NewEmail(user.Username, user.Email) // user.Email adalah alamat email penerima
 	plainTextContent := "Terima kasih telah mendaftar!"
 	htmlContent := "<strong>Terima kasih telah mendaftar!</strong>"
 	message := mail.NewSingleEmail(from, subject, to, plainTextContent, htmlContent)
 
-	client := sendgrid.NewSendClient("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") // Ganti dengan API key SendGrid kamu
+	client := sendgrid.NewSendClient(os.Getenv("emailApi")) // Ganti dengan API key SendGrid kamu
 	_, err = client.Send(message)
 
 	if err != nil {
