@@ -9,15 +9,21 @@ import (
 )
 
 func SetupRouter(e *echo.Echo) {
-
 	auth := handlers.NewAuth(database.InitDB())
 
+	// Routes without JWT middleware
 	e.POST("/register", auth.Register)
 	e.POST("/login", auth.Login)
 
-	e.GET("/books", auth.GetAllBooks, middleware.JWTAuth)
-	e.POST("/rent", auth.RentBook, middleware.JWTAuth)
-	e.PUT("/update", auth.UpdateBook, middleware.JWTAuth)
-	e.DELETE("/delete", auth.DeleteBook, middleware.JWTAuth)
+	// Routes with JWT middleware
+	protected := e.Group("")
+	protected.Use(middleware.JWTAuth)
 
+	protected.GET("/books", auth.GetAllBooks)
+	protected.POST("/rent", auth.RentBook)
+	protected.PUT("/update", auth.UpdateBook)
+	protected.DELETE("/delete", auth.DeleteBook)
+	protected.POST("/topup", auth.TopUpDeposit)
+	protected.POST("/return", auth.ReturnBook)
+	protected.DELETE("/deletehistory", auth.DeleteRentalHistory)
 }

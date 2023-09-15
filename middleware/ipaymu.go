@@ -9,13 +9,12 @@ import (
 	"io/ioutil"
 	"mini_project_p2/models"
 	"net/http"
-	"os"
 	"strings"
 )
 
 // Define your iPaymu credentials
-var ipaymuVa = os.Getenv("va")      // Your iPaymu VA
-var ipaymuKey = os.Getenv("ipaymu") // Your iPaymu API key
+var ipaymuVa = "0000008179868237"                             // Your iPaymu VA
+var ipaymuKey = "SANDBOX477C3A42-23B8-4F84-81AE-FB0B54E68D77" // Your iPaymu API key
 
 func SendPaymentRequest(paymentData models.PaymentData) error {
 	postBody, err := json.Marshal(paymentData)

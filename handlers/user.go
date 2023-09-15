@@ -78,3 +78,24 @@ func (a *Auth) Login(e echo.Context) error {
 	})
 
 }
+
+func (a *Auth) TopUpDeposit(c echo.Context) error {
+
+	userID := c.Get("user").(models.User).ID
+
+	var depositRequest struct {
+		Amount float64 `json:"amount"`
+	}
+
+	if err := c.Bind(&depositRequest); err != nil {
+		return err
+	}
+
+	sql := "UPDATE users SET deposit_amount = deposit_amount + ? WHERE id = ?"
+	if err := a.DB.Exec(sql, depositRequest.Amount, userID).Error; err != nil {
+		return err
+	}
+
+	return c.JSON(http.StatusOK, depositRequest)
+
+}
