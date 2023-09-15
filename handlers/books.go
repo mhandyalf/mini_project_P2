@@ -75,6 +75,21 @@ func (a *Auth) RentBook(c echo.Context) error {
 		return err
 	}
 
+	// Ambil nilai DepositAmount dari pengguna
+	user := c.Get("user").(models.User)
+	depositAmount := user.DepositAmount
+
+	// Kurangkan DepositAmount sesuai dengan biaya sewa buku
+	depositAmount -= rent.RentalCost
+
+	// Perbarui nilai DepositAmount di basis data untuk pengguna yang bersangkutan
+	query = `
+		UPDATE users SET deposit_amount = $1 WHERE id = $2
+	`
+	if err := a.DB.Exec(query, depositAmount, userID).Error; err != nil {
+		return err
+	}
+
 	paymentData := models.PaymentData{
 		Product:     []string{"Book Rental"},
 		Qty:         []int8{1},
