@@ -1,0 +1,198 @@
+basePath: /v2
+definitions:
+  models.BookInventory:
+    properties:
+      book_id:
+        type: integer
+      category:
+        type: string
+      name:
+        type: string
+      rental_costs:
+        type: number
+      stock_availability:
+        type: integer
+    type: object
+  models.RentalHistory:
+    properties:
+      book_id:
+        type: integer
+      rental_cost:
+        type: number
+      rental_date:
+        type: string
+      rental_id:
+        type: integer
+      return_date:
+        type: string
+      user_id:
+        type: integer
+    type: object
+  models.User:
+    properties:
+      deposit_amount:
+        type: number
+      email:
+        type: string
+      id:
+        type: integer
+      username:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: support@swagger.io
+    name: API Support
+    url: http://www.swagger.io/support
+  description: This is Handy Library API
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: Handy Library API
+  version: "1.0"
+paths:
+  /books:
+    get:
+      description: Get a list of all books
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.BookInventory'
+            type: array
+        "400":
+          description: Bad Request
+      summary: Get all books
+  /books/delete:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a book by ID
+      parameters:
+      - description: Bearer {token}
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Book to delete
+        in: body
+        name: book
+        required: true
+        schema:
+          $ref: '#/definitions/models.BookInventory'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.BookInventory'
+        "404":
+          description: Not Found
+      summary: Delete a book
+  /books/rent:
+    post:
+      consumes:
+      - application/json
+      description: Rent a book and initiate a payment process
+      parameters:
+      - description: Bearer {token}
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Rental request
+        in: body
+        name: rent
+        required: true
+        schema:
+          $ref: '#/definitions/models.RentalHistory'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.RentalHistory'
+        "400":
+          description: Bad Request
+      summary: Rent a book
+  /books/update:
+    put:
+      consumes:
+      - application/json
+      description: Update a book's information
+      parameters:
+      - description: Bearer {token}
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Updated book information
+        in: body
+        name: book
+        required: true
+        schema:
+          $ref: '#/definitions/models.BookInventory'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.BookInventory'
+        "404":
+          description: Not Found
+      summary: Update a book
+  /login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate and generate a JWT token for the user
+      parameters:
+      - description: User login details
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/models.User'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+      summary: Login
+  /register:
+    post:
+      consumes:
+      - application/json
+      description: Register a new user and send a confirmation email
+      parameters:
+      - description: User registration details
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/models.User'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.User'
+        "400":
+          description: Bad Request
+      summary: Register a new user
+swagger: "2.0"

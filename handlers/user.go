@@ -1,14 +1,13 @@
 package handlers
 
 import (
+	"mini_project_p2/middleware"
 	"mini_project_p2/models"
+	"net/http"
 	"os"
-	"time"
 
 	"github.com/golang-jwt/jwt"
 	"github.com/labstack/echo/v4"
-	"github.com/sendgrid/sendgrid-go"
-	"github.com/sendgrid/sendgrid-go/helpers/mail"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
@@ -40,55 +39,41 @@ func (h *Auth) Register(c echo.Context) error {
 	}
 
 	// Mengirim email konfirmasi
-	from := mail.NewEmail("Handy Library", "mhandyalfurqon@gmail.com")
-	subject := "Konfirmasi Pendaftaran"
-	to := mail.NewEmail(user.Username, user.Email) // user.Email adalah alamat email penerima
-	plainTextContent := "Terima kasih telah mendaftar!"
-	htmlContent := "<strong>Terima kasih telah mendaftar!</strong>"
-	message := mail.NewSingleEmail(from, subject, to, plainTextContent, htmlContent)
-
-	client := sendgrid.NewSendClient(os.Getenv("emailApi")) // Ganti dengan API key SendGrid kamu
-	_, err = client.Send(message)
-
-	if err != nil {
-		// Handle error saat mengirim email
-		return c.JSON(500, err)
+	if err := middleware.SendConfirmationEmail(&user); err != nil {
+		return err
 	}
 
 	return c.JSON(201, user)
 }
 
-func (h *Auth) Login(c echo.Context) error {
+func (a *Auth) Login(e echo.Context) error {
 	var user models.User
 
-	if err := c.Bind(&user); err != nil {
-		return c.JSON(400, err)
+	if err := e.Bind(&user); err != nil {
+		return e.JSON(http.StatusBadRequest, err)
 	}
 
 	var foundUser models.User
-
-	if err := h.DB.Where("email = ?", user.Email).First(&user).Error; err != nil {
-		return c.JSON(404, err)
+	if err := a.DB.Where("email = ?", user.Email).First(&foundUser).Error; err != nil {
+		return e.JSON(http.StatusNotFound, err)
 	}
 
-	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(foundUser.Password)); err != nil {
-		return c.JSON(401, err)
+	if err := bcrypt.CompareHashAndPassword([]byte(foundUser.Password), []byte(user.Password)); err != nil {
+		return e.JSON(http.StatusUnauthorized, err)
 	}
 
-	// Buat token JWT
-	token := jwt.New(jwt.SigningMethodHS256)
-	claims := token.Claims.(jwt.MapClaims)
-	claims["id"] = user.ID                                // Menambahkan klaim ID ke dalam token
-	claims["exp"] = time.Now().Add(time.Hour * 24).Unix() // Menambahkan waktu kadaluarsa
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"id": float64(foundUser.ID),
+	})
 
-	// Tandatangani token dengan secret key (gantilah dengan secret key yang kuat)
-	tokenString, err := token.SignedString([]byte("secret-key"))
+	tokenString, err := token.SignedString([]byte(os.Getenv("secret")))
 	if err != nil {
-		return c.JSON(500, err)
+		return e.JSON(http.StatusInternalServerError, map[string]string{
+			"message": "gagal membuat token JWT",
+		})
 	}
 
-	// Mengembalikan token JWT
-	return c.JSON(200, map[string]string{
+	return e.JSON(http.StatusOK, map[string]string{
 		"token": tokenString,
 	})
 

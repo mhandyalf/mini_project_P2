@@ -1,40 +1,57 @@
 package middleware
 
 import (
-	"net/http"
+	"mini_project_p2/repository"
+	"os"
+	"strings"
 
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/labstack/echo/v4"
 )
 
-func JWTMiddleware() echo.MiddlewareFunc {
-	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
-			tokenString := c.Request().Header.Get("Authorization")
-			if tokenString == "" {
-				return c.JSON(http.StatusUnauthorized, "Token is missing")
-			}
+func JWTAuth(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		authHeader := c.Request().Header.Get("Authorization")
+		if authHeader == "" {
+			return echo.ErrUnauthorized
+		}
 
-			token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-				return []byte("secret-key"), nil // Gantilah dengan secret key yang sama dengan yang Anda gunakan di Login
-			})
+		tokenParts := strings.Split(authHeader, " ")
+		if len(tokenParts) != 2 || tokenParts[0] != "Bearer" {
+			return echo.ErrUnauthorized
+		}
 
-			if err != nil || !token.Valid {
-				return c.JSON(http.StatusUnauthorized, "Invalid token")
-			}
+		tokenString := tokenParts[1]
 
-			claims, ok := token.Claims.(jwt.MapClaims)
+		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+			// Pastikan Anda menggunakan secret key yang sama saat membuat dan memverifikasi token
+			return []byte(os.Getenv("secret")), nil
+		})
+
+		if err != nil {
+			return echo.ErrUnauthorized
+		}
+
+		if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+			userIDFloat64, ok := claims["id"].(float64)
 			if !ok {
-				return c.JSON(http.StatusUnauthorized, "Invalid token claims")
+				return echo.ErrUnauthorized
 			}
 
-			// Mendapatkan ID dari klaim
-			userID := claims["id"].(float64) // ID adalah float64 dalam klaim
+			// Konversi userIDFloat64 ke uint
+			userID := uint(userIDFloat64)
 
-			// Menambahkan klaim ID ke konteks
-			c.Set("user_id", int(userID))
+			// Dapatkan data pengguna dari database berdasarkan userID
+			user, err := repository.GetUserByID(float64(userID))
+			if err != nil {
+				return echo.ErrUnauthorized
+			}
 
+			// Simpan data pengguna dalam konteks
+			c.Set("user", user)
 			return next(c)
 		}
+
+		return echo.ErrUnauthorized
 	}
 }
