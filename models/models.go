@@ -7,7 +7,7 @@ type User struct {
 	ID            int     `json:"id"`
 	Email         string  `json:"email"`
 	Username      string  `json:"username"`
-	Password      string  `json:"-"`
+	Password      string  `json:"password"`
 	DepositAmount float64 `json:"deposit_amount"`
 }
 

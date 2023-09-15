@@ -54,12 +54,20 @@ func (a *Auth) Login(e echo.Context) error {
 	}
 
 	var foundUser models.User
-	if err := a.DB.Where("email = ?", user.Email).First(&foundUser).Error; err != nil {
-		return e.JSON(http.StatusNotFound, err)
+	a.DB.Where("email = ?", user.Email).First(&foundUser)
+
+	if foundUser.ID == 0 {
+		return e.JSON(http.StatusUnauthorized, map[string]string{
+			"message": "Email tidak ditemukan",
+		})
 	}
 
-	if err := bcrypt.CompareHashAndPassword([]byte(foundUser.Password), []byte(user.Password)); err != nil {
-		return e.JSON(http.StatusUnauthorized, err)
+	err := bcrypt.CompareHashAndPassword([]byte(foundUser.Password), []byte(user.Password))
+
+	if err != nil {
+		return e.JSON(http.StatusUnauthorized, map[string]string{
+			"message": "Kata sandi salah",
+		})
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
@@ -69,14 +77,13 @@ func (a *Auth) Login(e echo.Context) error {
 	tokenString, err := token.SignedString([]byte(os.Getenv("secret")))
 	if err != nil {
 		return e.JSON(http.StatusInternalServerError, map[string]string{
-			"message": "gagal membuat token JWT",
+			"message": "Gagal membuat token JWT",
 		})
 	}
 
 	return e.JSON(http.StatusOK, map[string]string{
 		"token": tokenString,
 	})
-
 }
 
 func (a *Auth) TopUpDeposit(c echo.Context) error {
